@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "{ROLEName}01",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream"
+      ],
+      "Resource": [
+        "{LOGGROUPARN}"
+      ]
+    },
+    {
+      "Sid": "{ROLEName}",
+      "Effect": "Allow",
+      "Action": [
+        "logs:PutLogEvents"
+      ],
+      "Resource": [
+        "{LOGGROUPARN}"
+      ]
+    }
+  ]
+}

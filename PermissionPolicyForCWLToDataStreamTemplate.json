@@ -1,0 +1,22 @@
+{
+    "Statement": [
+        {
+            "Effect":"Allow",
+            "Action": [
+                "kinesis:*"
+            ],
+            "Resource": [
+                    "*"
+            ]
+        },
+        {
+            "Effect":"Allow",
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": [
+                "{ARN}"
+            ]
+        }
+    ]
+}

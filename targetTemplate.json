@@ -1,0 +1,9 @@
+{
+    "Targets": [
+        {
+            "Id": "{ID}",
+            "Arn": "{ARN}",
+            "RoleArn": "{ROLEARN}"
+        }
+    ]
+}
