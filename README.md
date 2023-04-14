@@ -13,7 +13,7 @@ Once the CLI starts up you will be presented with a window that will look simila
 
 Now you will need to run the following commands:
 ```Bash
-git clone <insert_Link>
+git clone https://github.com/Blumira/AWShim
 cd ./AWShim
 chmod +x ./AWShim.sh
 ./AWShim.sh
