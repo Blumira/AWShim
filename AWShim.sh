@@ -353,6 +353,22 @@ function cloudtrailSettings() {
     echo -e "You will need to modify the Trail Event Types to include Data Events and Insight Events."
 }
 
+function cleanupFiles() {
+    # Cleanup the files that were created in earlier steps
+    rm KIAMpolicy.json
+    rm TrustPolicyForCWLToKinesis.json
+    rm PermissionPolicyForCWLToDataStream.json
+    rm PermissionPolicyForCWLToDataStream.json
+    rm ruleIAMservicerole.json
+    rm CTIAMpolicy.json
+    touch KIAMpolicy.json
+    touch TrustPolicyForCWLToKinesis.json
+    touch PermissionPolicyForCWLToDataStream.json
+    touch PermissionPolicyForCWLToDataStream.json
+    touch ruleIAMservicerole.json
+    touch CTIAMpolicy.json
+}
+
 createIAMKinesisIntegration
 echo "Waiting for resource creation to complete, please wait..."
 sleep 30s
@@ -362,6 +378,8 @@ sleep 30s
 createCWLogGroups
 echo "Validating, please wait..."
 sleep 30s
+echo "Cleaning up generated json configuration files..."
+cleanupFiles
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
