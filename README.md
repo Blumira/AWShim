@@ -16,13 +16,11 @@ Now you will need to run the following commands:
 git clone https://github.com/Blumira/AWShim
 cd ./AWShim
 chmod +x ./AWShim.sh
-./AWShim.sh
+./AWShim.sh -c
 ```
 There are a few prompts in this script please read carefully and answer based on what is in your AWS environment, the prompts are listed below:
 * Please enter your Region (for example us-east-1 or us-west-2)
-* Please provide a namespace for resource creation
 * Do you want to ship GuardDuty logs? (y/n)
-* Do you want to ship CloudTrail logs? (y/n)
 * Do you want to ship VPC Flow logs? (y/n)
 
 You will see the output from several commands, which can be ignored. Once the script is done running you will see an output that is preceded by two lines of ‘*’ followed by the information that you will need to use inside of Blumira (shown below).
@@ -44,5 +42,5 @@ Resources Created:
 * Cloudtrail to cloudwatch role
 * VPC to Cloudwatch role
 
-All resources will be namespaced by your specified input to more easily find what is being created.
+All resources will be namespaced by a unique epoch date/time to more easily find what is being created.
 
