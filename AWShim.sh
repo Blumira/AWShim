@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author: Justin Kikani 
-# Last Modified: 06/13/2022
+# Last Modified: 06/23/2022
 # Version: 1.0.0
 # Release Notes: Initial Release!
 # Purpose: To simplify and standardize the creation of the resources, 
@@ -11,7 +11,7 @@
 # To run this script please go to your AWS management console and run git clone git clone https://github.com/Blumira/AWShim.
 # CD into the directory.
 # Use chmod +X to make this script executable and then run this script.
-# Longform TODO: Add in cleanup option to remove created resources/policies
+# TODO: Cleanup/optimize cleanup functions, add more descriptive language to help
 
 printf ' ______  __      __  __  __    __  __  ______  ______    
 /\  == \/\ \    /\ \/\ \/\ "-./  \/\ \/\  == \/\  __ \   
