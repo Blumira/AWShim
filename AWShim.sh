@@ -489,7 +489,7 @@ function removeBlumiraConfigs() {
                     echo "Removing Blumira VPC Flow Log configurations..."
                     for vpcID in ${vpcIDs//\t/}; do
                         flowLog2Delete=$(aws ec2 describe-flow-logs \
-                            --filter "Name=resource-id,Values=vpc-0fba6f86b39b369c6" \
+                            --filter "Name=resource-id,Values=${vpcID}" \
                             --query "FlowLogs[?LogGroupName.contains(@, '${myNameSpace}')].FlowLogId" \
                             --output text)
                         aws ec2 delete-flow-logs \
