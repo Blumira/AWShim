@@ -282,6 +282,8 @@ function cloudtrailSettings() {
     aws s3api create-bucket \
         --acl private \
         --bucket $bucketNameLower \
+        --region $myRegion \
+        --create-bucket-configuration LocationConstraint=$myRegion \
         > /dev/null
     # Grab the account ID for the AWS tenant so that we can create the proper bucket policy and role for cloud trail
     accountID=$(aws sts get-caller-identity --query "Account" --output text)
