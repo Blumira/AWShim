@@ -280,7 +280,7 @@ function cloudtrailSettings() {
     bucketNameLower="${bucketName,,}"
     # Create the S3 bucket
     # Removing the location constraint as it is now causing deployment issues
-    if [ "$myRegion" = "us-east-1"]; then
+    if [ "$myRegion" = "us-east-1" ]; then
         aws s3api create-bucket \
             --acl private \
             --bucket $bucketNameLower \
