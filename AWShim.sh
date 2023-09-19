@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author: Justin Kikani 
 # Last Modified: 09/18/2022
-# Version: 1.0.1
+# Version: 1.0.2
 # Release Notes: Initial Release!
 # Purpose: To simplify and standardize the creation of the resources, 
 # permissions, and policies needed to be able to create a Cloud Connector
@@ -280,11 +280,20 @@ function cloudtrailSettings() {
     bucketNameLower="${bucketName,,}"
     # Create the S3 bucket
     # Removing the location constraint as it is now causing deployment issues
-    aws s3api create-bucket \
-        --acl private \
-        --bucket $bucketNameLower \
-        --region $myRegion \
-        > /dev/null
+    if [ "$myRegion = "us-east-1"]; then
+        aws s3api create-bucket \
+            --acl private \
+            --bucket $bucketNameLower \
+            --region $myRegion \
+            > /dev/null
+    else
+        aws s3api create-bucket \
+            --acl private \
+            --bucket $bucketNameLower \
+            --region $myRegion \
+            --create-bucket-configuration LocationConstraint=$myRegion
+            > /dev/null
+    fi
     sleep 30s
     # Grab the account ID for the AWS tenant so that we can create the proper bucket policy and role for cloud trail
     accountID=$(aws sts get-caller-identity --query "Account" --output text)
