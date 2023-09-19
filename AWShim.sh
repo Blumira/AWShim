@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author: Justin Kikani 
-# Last Modified: 06/23/2022
-# Version: 1.0.0
+# Last Modified: 09/18/2022
+# Version: 1.0.1
 # Release Notes: Initial Release!
 # Purpose: To simplify and standardize the creation of the resources, 
 # permissions, and policies needed to be able to create a Cloud Connector
@@ -279,12 +279,13 @@ function cloudtrailSettings() {
     bucketName="${myNameSpace}BlumiraCTrailBucket"
     bucketNameLower="${bucketName,,}"
     # Create the S3 bucket
+    # Removing the location constraint as it is now causing deployment issues
     aws s3api create-bucket \
         --acl private \
         --bucket $bucketNameLower \
         --region $myRegion \
-        --create-bucket-configuration LocationConstraint=$myRegion \
         > /dev/null
+    sleep 30s
     # Grab the account ID for the AWS tenant so that we can create the proper bucket policy and role for cloud trail
     accountID=$(aws sts get-caller-identity --query "Account" --output text)
     sed -e "s,{BUCKETNAME},$bucketNameLower,g; s,{ACCOUNTID},$accountID,g; s,{TRAILNAME},${myNameSpace}BlumiraCTrail,g; s,{REGION},$myRegion,g" S3bucketpolicytemplate.json > S3bucketpolicy.json
