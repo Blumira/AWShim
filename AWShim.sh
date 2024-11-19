@@ -31,7 +31,7 @@ function Help() {
     echo "AWShim is an automated deployment tool for configuring your AWS environment for Blumira."
     echo "WARNING! THIS SCRIPT USES THE DATE/TIME FOR NAMESPACING RESOURCES"
     echo "IF IT HAS BEEN MORE THAN 1 DAY IT WILL CREATE ALL NEW RESOURCES"
-    echo "Valid syntax will include AWShim.sh -h|-c|-u"
+    echo "Valid syntax will include AWShim.sh -h|-c"
 }
 
 function createIAMKinesisIntegration() {
@@ -519,7 +519,7 @@ function removeBlumiraConfigs() {
 }
 
 # Main Program Section
-while getopts ":hcut" option; do
+while getopts ":hct" option; do
     case $option in
         h) # display Help
             Help
@@ -578,10 +578,10 @@ while getopts ":hcut" option; do
             echo "Please document the following uninstall command in case you need to remove Blumira configurations:"
             echo "./AWShim.sh -u "$myNameSpace
             exit;;
-        u)  
-            echo "Removing Blumira configurations and Blumira logging resources..."
-            removeBlumiraConfigs $2
-            exit;;
+        #u)  
+        #    echo "Removing Blumira configurations and Blumira logging resources..."
+        #    removeBlumiraConfigs $2
+        #    exit;;
         t)
             # Dev/Test Option
             startDateTime=$(date)
