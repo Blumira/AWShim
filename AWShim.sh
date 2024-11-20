@@ -1,8 +1,8 @@
 #!/bin/bash
 # Author: Justin Kikani 
-# Last Modified: 09/18/2022
-# Version: 1.0.2
-# Release Notes: Initial Release!
+# Last Modified: 11/19/2024
+# Version: 1.0.3
+# Release Notes: Update removal command
 # Purpose: To simplify and standardize the creation of the resources, 
 # permissions, and policies needed to be able to create a Cloud Connector
 # within the Blumira platform.
@@ -31,7 +31,7 @@ function Help() {
     echo "AWShim is an automated deployment tool for configuring your AWS environment for Blumira."
     echo "WARNING! THIS SCRIPT USES THE DATE/TIME FOR NAMESPACING RESOURCES"
     echo "IF IT HAS BEEN MORE THAN 1 DAY IT WILL CREATE ALL NEW RESOURCES"
-    echo "Valid syntax will include AWShim.sh -h|-c"
+    echo "Valid syntax will include AWShim.sh -h|-c|-u"
 }
 
 function createIAMKinesisIntegration() {
@@ -369,157 +369,173 @@ function removeBlumiraConfigs() {
     
     # Set the namespace for querying resources
     myNameSpace=$1
-    
-    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    echo "WARNING! This will delete your Blumira AWS configurations."
-    echo "Please confirm that you want to proceed."
-    while true; do
-        read -p "$* [y/n]: " yn
-        case $yn in
-            [Yy]*)
-                # Remove Streams
-                echo "Removing Blumira Kinesis Stream..."
-                kinesisStreams2Remove=$(aws kinesis list-streams --query "StreamSummaries[?StreamARN.contains(@, '$myNameSpace')].StreamARN" --output text)
-                aws kinesis delete-stream --stream-arn $kinesisStreams2Remove
-            
-                # Remove Users and IAM Configurations
-                echo "Removing Blumira IAM User..."
-                IAMpolicyArn2Remove=$(aws iam list-policies --query "Policies[?Arn.contains(@,'$myNameSpace')].Arn" --output text)
-                IAMusers2Remove=$(aws iam list-users --query "Users[?Arn.contains(@, '$myNameSpace')].UserName" --output text)
-                IAMaccessKeyId2Remove=$(aws iam list-access-keys --user-name $IAMusers2Remove --query "AccessKeyMetadata[].AccessKeyId" --output text)
-                aws iam detach-user-policy --user-name $IAMusers2Remove --policy-arn $IAMpolicyArn2Remove
-                aws iam delete-policy --policy-arn $IAMpolicyArn2Remove
-                aws iam delete-access-key --user-name $IAMusers2Remove --access-key-id $IAMaccessKeyId2Remove
-                aws iam delete-user --user-name $IAMusers2Remove
+
+    if ! [[ "$myNameSpace" =~ ^[0-9]+$ ]]; then
+        echo "Error: Input must be an epoch timestamp."
+        exit 1
+    fi
+
+    # Unix epoch start (April 1, 2023)
+    MIN_EPOCH=1680354000
+
+    # Some future date (e.g., Year 2050)
+    MAX_EPOCH=2524608000
+
+    if [ "$myNameSpace" -lt "$MIN_EPOCH" ] || [ "$myNameSpace" -gt "$MAX_EPOCH" ]; then
+        echo "Error: Epoch must be between $MIN_EPOCH and $MAX_EPOCH"
+        exit 1
+    else
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        echo "WARNING! This will delete your Blumira AWS configurations."
+        echo "Please confirm that you want to proceed."
+        while true; do
+            read -p "$* [y/n]: " yn
+            case $yn in
+                [Yy]*)
+                    # Remove Streams
+                    echo "Removing Blumira Kinesis Stream..."
+                    kinesisStreams2Remove=$(aws kinesis list-streams --query "StreamSummaries[?StreamARN.contains(@, '$myNameSpace')].StreamARN" --output text)
+                    aws kinesis delete-stream --stream-arn $kinesisStreams2Remove
                 
-                # Remove Roles
-                echo "Removing additional Blumira IAM roles..."
-                IAMrole2Remove1=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $1}')
-                IAMrole2Remove2=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $2}')
-                IAMrole2Remove3=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $3}')
-                IAMrole2Remove4=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $4}')
-                IAMrolePolicy2Remove1=$(aws iam list-role-policies --role-name $IAMrole2Remove1 --query PolicyNames[] --output text)
-                IAMrolePolicy2Remove2=$(aws iam list-role-policies --role-name $IAMrole2Remove2 --query PolicyNames[] --output text)
-                IAMrolePolicy2Remove3=$(aws iam list-role-policies --role-name $IAMrole2Remove3 --query PolicyNames[] --output text)
-                IAMrolePolicy2Remove4=$(aws iam list-role-policies --role-name $IAMrole2Remove4 --query PolicyNames[] --output text)
-                aws iam delete-role-policy --role-name $IAMrole2Remove1 --policy-name $IAMrolePolicy2Remove1
-                aws iam delete-role-policy --role-name $IAMrole2Remove2 --policy-name $IAMrolePolicy2Remove2
-                aws iam delete-role-policy --role-name $IAMrole2Remove3 --policy-name $IAMrolePolicy2Remove3
-                aws iam delete-role-policy --role-name $IAMrole2Remove4 --policy-name $IAMrolePolicy2Remove4
-                aws iam delete-role --role-name $IAMrole2Remove1
-                aws iam delete-role --role-name $IAMrole2Remove2
-                aws iam delete-role --role-name $IAMrole2Remove3
-                aws iam delete-role --role-name $IAMrole2Remove4
+                    # Remove Users and IAM Configurations
+                    echo "Removing Blumira IAM User..."
+                    IAMpolicyArn2Remove=$(aws iam list-policies --query "Policies[?Arn.contains(@,'$myNameSpace')].Arn" --output text)
+                    IAMusers2Remove=$(aws iam list-users --query "Users[?Arn.contains(@, '$myNameSpace')].UserName" --output text)
+                    IAMaccessKeyId2Remove=$(aws iam list-access-keys --user-name $IAMusers2Remove --query "AccessKeyMetadata[].AccessKeyId" --output text)
+                    aws iam detach-user-policy --user-name $IAMusers2Remove --policy-arn $IAMpolicyArn2Remove
+                    aws iam delete-policy --policy-arn $IAMpolicyArn2Remove
+                    aws iam delete-access-key --user-name $IAMusers2Remove --access-key-id $IAMaccessKeyId2Remove
+                    aws iam delete-user --user-name $IAMusers2Remove
+                    
+                    # Remove Roles
+                    echo "Removing additional Blumira IAM roles..."
+                    IAMrole2Remove1=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $1}')
+                    IAMrole2Remove2=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $2}')
+                    IAMrole2Remove3=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $3}')
+                    IAMrole2Remove4=$(aws iam list-roles --query "Roles[?RoleName.contains(@, '$myNameSpace')].RoleName" --output text | awk '{print $4}')
+                    IAMrolePolicy2Remove1=$(aws iam list-role-policies --role-name $IAMrole2Remove1 --query PolicyNames[] --output text)
+                    IAMrolePolicy2Remove2=$(aws iam list-role-policies --role-name $IAMrole2Remove2 --query PolicyNames[] --output text)
+                    IAMrolePolicy2Remove3=$(aws iam list-role-policies --role-name $IAMrole2Remove3 --query PolicyNames[] --output text)
+                    IAMrolePolicy2Remove4=$(aws iam list-role-policies --role-name $IAMrole2Remove4 --query PolicyNames[] --output text)
+                    aws iam delete-role-policy --role-name $IAMrole2Remove1 --policy-name $IAMrolePolicy2Remove1
+                    aws iam delete-role-policy --role-name $IAMrole2Remove2 --policy-name $IAMrolePolicy2Remove2
+                    aws iam delete-role-policy --role-name $IAMrole2Remove3 --policy-name $IAMrolePolicy2Remove3
+                    aws iam delete-role-policy --role-name $IAMrole2Remove4 --policy-name $IAMrolePolicy2Remove4
+                    aws iam delete-role --role-name $IAMrole2Remove1
+                    aws iam delete-role --role-name $IAMrole2Remove2
+                    aws iam delete-role --role-name $IAMrole2Remove3
+                    aws iam delete-role --role-name $IAMrole2Remove4
 
-                # Remove Log Groups
-                echo "Removing Log Groups..."
-                aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCShellLogs'].logGroupName" --output text)
-                aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCWLogs'].logGroupName" --output text)
-                aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraIAMLogs'].logGroupName" --output text)
-                aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCTLogs'].logGroupName" --output text)
+                    # Remove Log Groups
+                    echo "Removing Log Groups..."
+                    aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCShellLogs'].logGroupName" --output text)
+                    aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCWLogs'].logGroupName" --output text)
+                    aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraIAMLogs'].logGroupName" --output text)
+                    aws logs delete-log-group --log-group-name $(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraCTLogs'].logGroupName" --output text)
 
-                # Remove Event Rules
-                echo "Removing Blumira Targets by Rules..."
-                target2Delete=$(aws events list-targets-by-rule \
-                    --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text) \
-                    --query "Targets[].Id" \
-                    --output text)
-                aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text) \
-                    --ids $target2Delete \
-                    > /dev/null
-                target2Delete=$(aws events list-targets-by-rule \
-                    --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text) \
-                    --query "Targets[].Id" \
-                    --output text)
-                aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text) \
-                    --ids $target2Delete \
-                    > /dev/null
-                target2Delete=$(aws events list-targets-by-rule \
-                    --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text) \
-                    --query "Targets[].Id" \
-                    --output text)
-                aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text) \
-                    --ids $target2Delete \
-                    > /dev/null
-                target2Delete=$(aws events list-targets-by-rule \
-                    --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text) \
-                    --query "Targets[].Id" \
-                    --output text)
-                aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text) \
-                    --ids $target2Delete \
-                    > /dev/null
-                echo "Removing Blumira Rules..."
-                aws events delete-rule \
-                    --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text)
-                aws events delete-rule \
-                    --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text)
-                aws events delete-rule \
-                    --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text)
-                aws events delete-rule \
-                    --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text)
-                
-                # Remove Trails
-                echo "Removing Blumira CloudTrail Trail configurations..."
-                aws cloudtrail delete-trail --name "${myNameSpace}BlumiraCTrail"
-
-                # Remove Bucket
-                echo "Deleting Blumira Bucket Data..."
-                aws s3 rm "s3://${myNameSpace}blumiractrailbucket/" --recursive \
-                    > /dev/null
-                echo "Removing Blumira Bucket..."
-                aws s3 rb "s3://${myNameSpace}blumiractrailbucket/" --force \
-                > /dev/null
-
-                # Checking for GuardDuty
-                echo "Checking for Blumira GuardDuty configurations..."
-                doesGDLogGroupExist=$(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraGDLogs'].logGroupName" --output text)
-                if [ -n "$doesGDLogGroupExist" ]; then
-                    echo "WARNING! This script will not disable GuardDuty."
-                    echo "Removing Blumira GuardDuty configurations..."
-                    aws logs delete-log-group --log-group-name $doesGDLogGroupExist
+                    # Remove Event Rules
+                    echo "Removing Blumira Targets by Rules..."
                     target2Delete=$(aws events list-targets-by-rule \
-                    --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text) \
-                    --query "Targets[].Id" \
-                    --output text)
-                    aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text) \
+                        --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text) \
+                        --query "Targets[].Id" \
+                        --output text)
+                    aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text) \
                         --ids $target2Delete \
                         > /dev/null
+                    target2Delete=$(aws events list-targets-by-rule \
+                        --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text) \
+                        --query "Targets[].Id" \
+                        --output text)
+                    aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text) \
+                        --ids $target2Delete \
+                        > /dev/null
+                    target2Delete=$(aws events list-targets-by-rule \
+                        --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text) \
+                        --query "Targets[].Id" \
+                        --output text)
+                    aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text) \
+                        --ids $target2Delete \
+                        > /dev/null
+                    target2Delete=$(aws events list-targets-by-rule \
+                        --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text) \
+                        --query "Targets[].Id" \
+                        --output text)
+                    aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text) \
+                        --ids $target2Delete \
+                        > /dev/null
+                    echo "Removing Blumira Rules..."
                     aws events delete-rule \
-                        --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text)
-                else
-                    echo "No Blumira GuardDuty configurations found, skipping..."
-                fi
+                        --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCShellLogs'].Name" --output text)
+                    aws events delete-rule \
+                        --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCWLogs'].Name" --output text)
+                    aws events delete-rule \
+                        --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraIAMLogs'].Name" --output text)
+                    aws events delete-rule \
+                        --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraCTLogs'].Name" --output text)
+                    
+                    # Remove Trails
+                    echo "Removing Blumira CloudTrail Trail configurations..."
+                    aws cloudtrail delete-trail --name "${myNameSpace}BlumiraCTrail"
 
-                # Checking for VPC Flow Logs
-                doesVPCLogGroupExist=$(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraVPCLogs'].logGroupName" --output text)
-                if [ -n "$doesVPCLogGroupExist" ]; then
-                    echo "Removing Blumira VPC Flow Log Group..."
-                    vpcIDs=$(aws ec2 describe-vpcs --query "Vpcs[].VpcId" --output text)
-                    echo "Removing Blumira VPC Flow Log configurations..."
-                    for vpcID in ${vpcIDs//\t/}; do
-                        flowLog2Delete=$(aws ec2 describe-flow-logs \
-                            --filter "Name=resource-id,Values=${vpcID}" \
-                            --query "FlowLogs[?LogGroupName.contains(@, '${myNameSpace}')].FlowLogId" \
-                            --output text)
-                        aws ec2 delete-flow-logs \
-                            --flow-log-ids $flowLog2Delete \
+                    # Remove Bucket
+                    echo "Deleting Blumira Bucket Data..."
+                    aws s3 rm "s3://${myNameSpace}blumiractrailbucket/" --recursive \
+                        > /dev/null
+                    echo "Removing Blumira Bucket..."
+                    aws s3 rb "s3://${myNameSpace}blumiractrailbucket/" --force \
+                    > /dev/null
+
+                    # Checking for GuardDuty
+                    echo "Checking for Blumira GuardDuty configurations..."
+                    doesGDLogGroupExist=$(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraGDLogs'].logGroupName" --output text)
+                    if [ -n "$doesGDLogGroupExist" ]; then
+                        echo "WARNING! This script will not disable GuardDuty."
+                        echo "Removing Blumira GuardDuty configurations..."
+                        aws logs delete-log-group --log-group-name $doesGDLogGroupExist
+                        target2Delete=$(aws events list-targets-by-rule \
+                        --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text) \
+                        --query "Targets[].Id" \
+                        --output text)
+                        aws events remove-targets --rule $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text) \
+                            --ids $target2Delete \
                             > /dev/null
-                    done
-                else
-                    echo "No Blumira VPC Flow Log configurations found, skipping..."
-                fi
+                        aws events delete-rule \
+                            --name $(aws events list-rules --query "Rules[?Name=='${myNameSpace}BlumiraGDLogs'].Name" --output text)
+                    else
+                        echo "No Blumira GuardDuty configurations found, skipping..."
+                    fi
 
-                return 0;;
-            [Nn]*)
-                echo "Aborting, no configurations have been removed." 
-                return  1;;
-        esac
-    done
+                    # Checking for VPC Flow Logs
+                    doesVPCLogGroupExist=$(aws logs describe-log-groups --query "logGroups[?logGroupName=='${myNameSpace}BlumiraVPCLogs'].logGroupName" --output text)
+                    if [ -n "$doesVPCLogGroupExist" ]; then
+                        echo "Removing Blumira VPC Flow Log Group..."
+                        vpcIDs=$(aws ec2 describe-vpcs --query "Vpcs[].VpcId" --output text)
+                        echo "Removing Blumira VPC Flow Log configurations..."
+                        for vpcID in ${vpcIDs//\t/}; do
+                            flowLog2Delete=$(aws ec2 describe-flow-logs \
+                                --filter "Name=resource-id,Values=${vpcID}" \
+                                --query "FlowLogs[?LogGroupName.contains(@, '${myNameSpace}')].FlowLogId" \
+                                --output text)
+                            aws ec2 delete-flow-logs \
+                                --flow-log-ids $flowLog2Delete \
+                                > /dev/null
+                        done
+                    else
+                        echo "No Blumira VPC Flow Log configurations found, skipping..."
+                    fi
+
+                    return 0;;
+                [Nn]*)
+                    echo "Aborting, no configurations have been removed." 
+                    return  1;;
+            esac
+        done
+    fi
 }
 
 # Main Program Section
-while getopts ":hct" option; do
+while getopts ":hcut" option; do
     case $option in
         h) # display Help
             Help
@@ -578,10 +594,10 @@ while getopts ":hct" option; do
             echo "Please document the following uninstall command in case you need to remove Blumira configurations:"
             echo "./AWShim.sh -u "$myNameSpace
             exit;;
-        #u)  
-        #    echo "Removing Blumira configurations and Blumira logging resources..."
-        #    removeBlumiraConfigs $2
-        #    exit;;
+        u)  
+            echo "Removing Blumira configurations and Blumira logging resources..."
+            removeBlumiraConfigs ${2}
+            exit;;
         t)
             # Dev/Test Option
             startDateTime=$(date)
